@@ -7,11 +7,8 @@ export default defineConfig(({ command }) => {
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = path.dirname(__filename);
 
-    if (command === 'serve') {
-        return { root: path.resolve(__dirname, 'example') };
-    }
-
     return {
+        root: command === 'serve' ? path.resolve(__dirname, 'example') : path.resolve(__dirname),
         plugins: [dts()],
         build: {
             lib: {
