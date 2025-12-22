@@ -24,11 +24,13 @@ export class DataChunk {
 export class ChunkProcessor {
     private fft: FFTExecutor;
     private windowBuffer: Float32Array;
+    private inputBuf: Float32Array;
 
     constructor(config: SpectrogramConfig) {
-        const fftSize = config.fftSize ?? 1024; // Should ideally come from model
+        const fftSize = config.fftSize ?? 1024;
         this.fft = new FFTExecutor(fftSize);
         this.windowBuffer = createWindow(config.windowSize, config.windowType);
+        this.inputBuf = new Float32Array(fftSize);
     }
 
     process(
@@ -39,22 +41,21 @@ export class ChunkProcessor {
         colormapToRgb: (normalizedVal: number) => [number, number, number]
     ): ImageData {
         const { windowSize, minDb, maxDb, overlap } = config;
-        // Fallback if hopSize isn't strictly typed (though Model ensures it)
         const hopSize = Math.max(1, windowSize - overlap);
         const fftSize = this.fft.size();
 
         const numHops = Math.ceil((endIdx - startIdx) / hopSize);
         const width = numHops;
-        const height = fftSize / 2 + 1; // Linear frequency bins
+        const height = (fftSize >> 1) + 1;
 
         if (width <= 0) {
             return new ImageData(1, 1);
         }
 
         const imgData = new ImageData(width, height);
-        const pixels = imgData.data; // RGBA buffer
-
-        const inputBuf = new Float32Array(fftSize);
+        const pixels = imgData.data;
+        const inputBuf = this.inputBuf;
+        const windowBuf = this.windowBuffer;
 
         let dcSum = 0;
         let validCount = 0;
@@ -70,11 +71,10 @@ export class ChunkProcessor {
             const signalStart = startIdx + x * hopSize;
             const mean = validCount > 0 ? dcSum / validCount : 0;
 
-            let i = 0;
             const end = Math.min(windowSize, data.length - signalStart);
-
+            let i = 0;
             for (; i < end; i++) {
-                inputBuf[i] = (data[signalStart + i] - mean) * this.windowBuffer[i];
+                inputBuf[i] = (data[signalStart + i] - mean) * windowBuf[i];
             }
             for (; i < fftSize; i++) {
                 inputBuf[i] = 0;
