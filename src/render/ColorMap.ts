@@ -13,92 +13,33 @@ export type ColorMapName =
 
 type RGB = [number, number, number];
 
-// Simple interpolation helper
-function lerp(a: number, b: number, t: number): number {
-    return a + (b - a) * t;
-}
+function interpolateColorMap(t: number, map: number[][]): RGB {
+    if (t <= 0) return map[0] as RGB;
+    if (t >= 1) return map[map.length - 1] as RGB;
 
-function viridis(t: number): RGB {
-    if (t < 0) {
-        t = 0;
-    }
-    if (t > 1) {
-        t = 1;
-    }
-
-    // 0% #440154 (68, 1, 84)
-    // 25% #3b528b (59, 82, 139)
-    // 50% #21918c (33, 145, 140)
-    // 75% #5ec962 (94, 201, 98)
-    // 100% #fde725 (253, 231, 37)
-
-    const map = [
-        [68, 1, 84],
-        [59, 82, 139],
-        [33, 145, 140],
-        [94, 201, 98],
-        [253, 231, 37]
-    ];
-
-    const step = 1.0 / (map.length - 1);
-    const idx = Math.floor(t / step);
-    if (idx >= map.length - 1) {
-        return map[map.length - 1] as RGB;
-    }
-
-    const nextIdx = idx + 1;
+    const step = 1 / (map.length - 1);
+    const idx = (t / step) | 0;
     const localT = (t - idx * step) / step;
 
     const c1 = map[idx];
-    const c2 = map[nextIdx];
+    const c2 = map[idx + 1];
 
     return [
-        Math.floor(lerp(c1[0], c2[0], localT)),
-        Math.floor(lerp(c1[1], c2[1], localT)),
-        Math.floor(lerp(c1[2], c2[2], localT))
+        (c1[0] + (c2[0] - c1[0]) * localT) | 0,
+        (c1[1] + (c2[1] - c1[1]) * localT) | 0,
+        (c1[2] + (c2[2] - c1[2]) * localT) | 0
     ];
+}
+
+const VIRIDIS_MAP = [[68, 1, 84], [59, 82, 139], [33, 145, 140], [94, 201, 98], [253, 231, 37]];
+const INFERNO_MAP = [[0, 0, 4], [87, 16, 110], [187, 55, 84], [249, 142, 9], [252, 255, 164]];
+
+function viridis(t: number): RGB {
+    return interpolateColorMap(t, VIRIDIS_MAP);
 }
 
 function inferno(t: number): RGB {
-    // Black -> Red -> Orange -> Yellow
-    // 0% #000004 (0, 0, 4)
-    // 25% #57106e (87, 16, 110)
-    // 50% #bb3754 (187, 55, 84)
-    // 75% #f98e09 (249, 142, 9)
-    // 100% #fcffa4 (252, 255, 164)
-
-    if (t < 0) {
-        t = 0;
-    }
-    if (t > 1) {
-        t = 1;
-    }
-
-    const map = [
-        [0, 0, 4],
-        [87, 16, 110],
-        [187, 55, 84],
-        [249, 142, 9],
-        [252, 255, 164]
-    ];
-
-    const step = 1.0 / (map.length - 1);
-    const idx = Math.floor(t / step);
-    if (idx >= map.length - 1) {
-        return map[map.length - 1] as RGB;
-    }
-
-    const nextIdx = idx + 1;
-    const localT = (t - idx * step) / step;
-
-    const c1 = map[idx];
-    const c2 = map[nextIdx];
-
-    return [
-        Math.floor(lerp(c1[0], c2[0], localT)),
-        Math.floor(lerp(c1[1], c2[1], localT)),
-        Math.floor(lerp(c1[2], c2[2], localT))
-    ];
+    return interpolateColorMap(t, INFERNO_MAP);
 }
 
 function grayscale(t: number): RGB {
@@ -205,25 +146,10 @@ function winter(t: number): RGB {
 }
 
 function bone(t: number): RGB {
-    // Dark Blue -> White (Grayish)
-    // Complex, usually approximate
-    // 0: 0,0,0
-    // 1: 1,1,1
-    // With blue tint in middle
-    // R: t (+ small bump)
-    // G: t (+ med bump)
-    // B: t (+ large bump)
-
     const r = t;
-    let g = t;
-    let b = t;
-
-    if (t < 0.75) {
-        b = t + 0.1 * Math.sin(t * Math.PI * 2);
-    }
-    if (t < 0.5) {
-        g = t + 0.1 * Math.sin(t * Math.PI * 2);
-    }
+    const sin = 0.1 * Math.sin(t * Math.PI * 2);
+    const g = t < 0.5 ? t + sin : t;
+    const b = t < 0.75 ? t + sin : t;
 
     return [
         Math.floor(Math.min(1, r) * 255),
@@ -231,6 +157,20 @@ function bone(t: number): RGB {
         Math.floor(Math.min(1, b) * 255)
     ];
 }
+
+const COLOR_MAP_FNS: Record<ColorMapName, (t: number) => RGB> = {
+    viridis,
+    inferno,
+    grayscale,
+    jet,
+    hot,
+    cool,
+    spring,
+    summer,
+    autumn,
+    winter,
+    bone
+};
 
 export class ColorMap {
     private type: ColorMapName;
@@ -243,56 +183,19 @@ export class ColorMap {
     }
 
     private generateLut() {
-        let fn = viridis;
-        if (this.type === 'inferno') {
-            fn = inferno;
-        }
-        if (this.type === 'grayscale') {
-            fn = grayscale;
-        }
-        if (this.type === 'jet') {
-            fn = jet;
-        }
-        if (this.type === 'hot') {
-            fn = hot;
-        }
-        if (this.type === 'cool') {
-            fn = cool;
-        }
-        if (this.type === 'spring') {
-            fn = spring;
-        }
-        if (this.type === 'summer') {
-            fn = summer;
-        }
-        if (this.type === 'autumn') {
-            fn = autumn;
-        }
-        if (this.type === 'winter') {
-            fn = winter;
-        }
-        if (this.type === 'bone') {
-            fn = bone;
-        }
-
+        const fn = COLOR_MAP_FNS[this.type];
         for (let i = 0; i < 256; i++) {
-            const t = i / 255;
-            const rgb = fn(t);
-            this.lut[i * 3] = rgb[0];
-            this.lut[i * 3 + 1] = rgb[1];
-            this.lut[i * 3 + 2] = rgb[2];
+            const rgb = fn(i / 255);
+            const j = i * 3;
+            this.lut[j] = rgb[0];
+            this.lut[j + 1] = rgb[1];
+            this.lut[j + 2] = rgb[2];
         }
     }
 
     getRGB(t: number): RGB {
-        if (t <= 0) {
-            t = 0;
-        }
-        if (t >= 1) {
-            t = 1;
-        }
-        const idx = Math.floor(t * 255);
-        return [this.lut[idx * 3], this.lut[idx * 3 + 1], this.lut[idx * 3 + 2]];
+        const idx = (t <= 0 ? 0 : t >= 1 ? 255 : (t * 255) | 0) * 3;
+        return [this.lut[idx], this.lut[idx + 1], this.lut[idx + 2]];
     }
 
     setMap(type: ColorMapName) {
