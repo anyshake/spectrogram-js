@@ -6,7 +6,7 @@
   "module": "dist/index.esm.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host",
     "build": "vite build"
   },
   "keywords": [
@@ -32,5 +32,8 @@
     "typescript-eslint": "^8.48.1",
     "vite": "^7.2.6",
     "vite-plugin-dts": "^4.5.4"
+  },
+  "dependencies": {
+    "webfft": "^1.0.3"
   }
 }
