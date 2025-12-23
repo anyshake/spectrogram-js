@@ -14,8 +14,12 @@ export type ColorMapName =
 type RGB = [number, number, number];
 
 function interpolateColorMap(t: number, map: number[][]): RGB {
-    if (t <= 0) return map[0] as RGB;
-    if (t >= 1) return map[map.length - 1] as RGB;
+    if (t <= 0) {
+        return map[0] as RGB;
+    }
+    if (t >= 1) {
+        return map[map.length - 1] as RGB;
+    }
 
     const step = 1 / (map.length - 1);
     const idx = (t / step) | 0;
@@ -31,8 +35,20 @@ function interpolateColorMap(t: number, map: number[][]): RGB {
     ];
 }
 
-const VIRIDIS_MAP = [[68, 1, 84], [59, 82, 139], [33, 145, 140], [94, 201, 98], [253, 231, 37]];
-const INFERNO_MAP = [[0, 0, 4], [87, 16, 110], [187, 55, 84], [249, 142, 9], [252, 255, 164]];
+const VIRIDIS_MAP = [
+    [68, 1, 84],
+    [59, 82, 139],
+    [33, 145, 140],
+    [94, 201, 98],
+    [253, 231, 37]
+];
+const INFERNO_MAP = [
+    [0, 0, 4],
+    [87, 16, 110],
+    [187, 55, 84],
+    [249, 142, 9],
+    [252, 255, 164]
+];
 
 function viridis(t: number): RGB {
     return interpolateColorMap(t, VIRIDIS_MAP);
@@ -176,7 +192,7 @@ export class ColorMap {
     private type: ColorMapName;
     private lut: Uint8Array; // [R, G, B, R, G, B...] for 0..255
 
-    constructor(type: ColorMapName = 'viridis') {
+    constructor(type: ColorMapName = 'jet') {
         this.type = type;
         this.lut = new Uint8Array(256 * 3);
         this.generateLut();
