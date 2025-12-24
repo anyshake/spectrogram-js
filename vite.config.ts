@@ -14,7 +14,8 @@ export default defineConfig(({ command, mode }) => {
                 outDir: path.resolve(__dirname, 'dist-example'),
                 emptyOutDir: true,
                 sourcemap: true
-            }
+            },
+            base: './'
         };
     }
 
