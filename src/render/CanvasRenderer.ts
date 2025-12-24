@@ -30,7 +30,7 @@ export class CanvasRenderer {
     constructor(model: SpectrogramModel) {
         this.model = model;
         this.processor = new ChunkProcessor(model.config);
-        this.colormap = new ColorMap('viridis');
+        this.colormap = new ColorMap();
         this.axisRenderer = new AxisRenderer(model);
     }
 

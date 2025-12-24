@@ -1,10 +1,6 @@
 import { Spectrogram } from '../src/index';
 import RingBuffer from './RingBuffer';
 
-const root = document.getElementById('root') as HTMLDivElement;
-const canvas = document.createElement('canvas');
-root.appendChild(canvas);
-
 const spectrogramDuration = 120; // seconds
 const spectrogramFreqRange = [0, 25]; // Hz
 const spectrogramMinDB = 110;
@@ -27,8 +23,19 @@ const spectrogram = new Spectrogram({
 spectrogram.setColormap('jet'); // see src/ColorMap.ts for available colormaps
 
 const main = async () => {
-    const res = await fetch('./data/testdata.txt');
+    const root = document.getElementById('root') as HTMLDivElement;
+
+    const loading = document.createElement('div');
+    loading.textContent = 'Loading data...';
+    loading.style.fontSize = '16px';
+    loading.style.marginBottom = '8px';
+    root.appendChild(loading);
+
+    const res = await fetch(new URL('./testdata.txt', import.meta.url).toString());
     const text = await res.text();
+
+    root.removeChild(loading);
+
     const lines = text.split('\n');
     const data: Array<[number, number]> = [];
     for (let i = 0; i < lines.length; i++) {
@@ -40,6 +47,9 @@ const main = async () => {
             data.push([timestamp, value]);
         }
     }
+
+    const canvas = document.createElement('canvas');
+    root.appendChild(canvas);
 
     const draw = () => {
         const duration = spectrogram.getDuration();

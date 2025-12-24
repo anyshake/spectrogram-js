@@ -3,9 +3,20 @@ import { fileURLToPath } from 'url';
 import { defineConfig } from 'vite';
 import dts from 'vite-plugin-dts';
 
-export default defineConfig(({ command }) => {
+export default defineConfig(({ command, mode }) => {
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = path.dirname(__filename);
+
+    if (mode === 'example') {
+        return {
+            root: path.resolve(__dirname, 'example'),
+            build: {
+                outDir: path.resolve(__dirname, 'dist-example'),
+                emptyOutDir: true,
+                sourcemap: true
+            }
+        };
+    }
 
     return {
         root: command === 'serve' ? path.resolve(__dirname, 'example') : path.resolve(__dirname),
@@ -20,7 +31,9 @@ export default defineConfig(({ command }) => {
             rollupOptions: {
                 treeshake: true
             },
-            sourcemap: true
+            sourcemap: true,
+            outDir: 'dist',
+            emptyOutDir: true
         }
     };
 });
