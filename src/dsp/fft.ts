@@ -60,7 +60,7 @@ export class FFTExecutor {
         return spec;
     }
 
-    dispose(): void {
-        this.fft.dispose();
+    dispose() {
+        // noop
     }
 }

@@ -77,7 +77,14 @@ const main = async () => {
         await new Promise((resolve) => setTimeout(resolve, 100));
     }
 
-    spectrogram.destroy();
+    // create a button to destroy the spectrogram
+    const destroyButton = document.createElement('button');
+    destroyButton.textContent = 'Destroy Spectrogram';
+    destroyButton.style.marginTop = '12px';
+    destroyButton.onclick = () => {
+        spectrogram.destroy();
+    };
+    root.appendChild(destroyButton);
 };
 
 main();
