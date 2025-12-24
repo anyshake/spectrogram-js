@@ -76,6 +76,8 @@ const main = async () => {
         spectrogram.setData(ring.toArray());
         await new Promise((resolve) => setTimeout(resolve, 100));
     }
+
+    spectrogram.destroy();
 };
 
 main();

@@ -24,6 +24,10 @@ export class Spectrogram {
         this.renderer.clearCache();
     }
 
+    destroy() {
+        this.renderer.dispose();
+    }
+
     render(options: Omit<RenderOptions, 'freqRange'> & { freqRange?: [number, number] }) {
         // Default freq range to [0, Nyquist] if not provided
         const nyquist = this.model.config.sampleRate / 2;

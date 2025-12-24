@@ -44,6 +44,16 @@ export class CanvasRenderer {
         this.offscreenHelpers.clear();
     }
 
+    dispose() {
+        this.clearCache();
+
+        this.offscreenCanvas = null;
+        this.offscreenCtx = null;
+        this.ctx = null;
+
+        this.processor.dispose();
+    }
+
     setupHiDPICanvas(canvas: HTMLCanvasElement, cssWidth: number, cssHeight: number) {
         const dpr = window.devicePixelRatio || 1;
 

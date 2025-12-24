@@ -22,6 +22,8 @@ export type TimestampedData = Array<[number, number]>; // [timestamp, value]
 export class SpectrogramModel {
     config: SpectrogramConfig;
     data: SpectrogramData | null = null;
+
+    showRealTimeScale: boolean = false;
     startTime: number = 0;
 
     // Derived properties
@@ -36,7 +38,10 @@ export class SpectrogramModel {
     }
 
     setData(data: SpectrogramData | TimestampedData) {
-        if (this.isTimestamped(data)) {
+        const isTimestamped = this.isTimestamped(data);
+        this.showRealTimeScale = isTimestamped;
+
+        if (isTimestamped) {
             if (data.length === 0) {
                 this.data = new Float32Array(0);
                 return;

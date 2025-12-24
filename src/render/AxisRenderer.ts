@@ -77,12 +77,16 @@ export class AxisRenderer {
 
             // Draw Label
             const totalSeconds = startTimeStamp + timeRel * 1000;
-            const date = new Date(totalSeconds);
-
-            const hh = date.getHours().toString().padStart(2, '0');
-            const mm = date.getMinutes().toString().padStart(2, '0');
-            const ss = date.getSeconds().toString().padStart(2, '0');
-            const label = `${hh}:${mm}:${ss}`;
+            let label = '';
+            if (this.model.showRealTimeScale) {
+                const date = new Date(totalSeconds);
+                const hh = date.getHours().toString().padStart(2, '0');
+                const mm = date.getMinutes().toString().padStart(2, '0');
+                const ss = date.getSeconds().toString().padStart(2, '0');
+                label = `${hh}:${mm}:${ss}`;
+            } else if (totalSeconds >= 0) {
+                label = `${Math.floor(tEnd - totalSeconds / 1000)}s`;
+            }
 
             // Adjust label position
             ctx.textAlign = 'center';

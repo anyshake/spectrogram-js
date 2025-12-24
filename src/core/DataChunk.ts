@@ -115,4 +115,8 @@ export class ChunkProcessor {
 
         return imgData;
     }
+
+    dispose() {
+        this.fft.dispose();
+    }
 }
