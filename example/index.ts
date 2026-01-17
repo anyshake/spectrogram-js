@@ -1,4 +1,4 @@
-import { Spectrogram } from '../src/index';
+import { FFTExecutor, Spectrogram } from '../src/index';
 import RingBuffer from './RingBuffer';
 
 const spectrogramDuration = 120; // seconds
@@ -12,13 +12,16 @@ const spectrogramHeight = 256;
 const sampleRate = 250;
 const fftWindowSize = 768;
 
+const fftExecutor = new FFTExecutor(1024); // optional: global FFT executor
+
 const spectrogram = new Spectrogram({
     sampleRate: sampleRate,
     windowSize: fftWindowSize,
     overlap: Math.floor(fftWindowSize * 0.86),
     windowType: 'hann', // hann, hamming, blackman, rectangular
     minDb: spectrogramMinDB,
-    maxDb: spectrogramMaxDB
+    maxDb: spectrogramMaxDB,
+    fftExecutor
 });
 spectrogram.setColormap('jet'); // see src/ColorMap.ts for available colormaps
 

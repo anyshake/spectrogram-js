@@ -27,8 +27,14 @@ export class ChunkProcessor {
     private inputBuf: Float32Array;
 
     constructor(config: SpectrogramConfig) {
-        const fftSize = config.fftSize ?? 1024;
-        this.fft = new FFTExecutor(fftSize);
+        let fftSize;
+        if (!config.fftExecutor) {
+            fftSize = config.fftSize ?? 1024;
+            this.fft = new FFTExecutor(fftSize);
+        } else {
+            fftSize = config.fftExecutor.size();
+            this.fft = config.fftExecutor;
+        }
         this.windowBuffer = createWindow(config.windowSize, config.windowType);
         this.inputBuf = new Float32Array(fftSize);
     }

@@ -1,3 +1,4 @@
+import { FFTExecutor } from '../dsp/fft';
 import { WindowFunctionType } from '../dsp/window';
 
 export interface SpectrogramConfig {
@@ -14,6 +15,9 @@ export interface SpectrogramConfig {
 
     minDb: number;
     maxDb: number;
+
+    // Optional, speccify a FFT executor instance for reuse
+    fftExecutor?: FFTExecutor;
 }
 
 export type SpectrogramData = Float32Array | Float64Array;
@@ -26,15 +30,8 @@ export class SpectrogramModel {
     showRealTimeScale: boolean = false;
     startTime: number = 0;
 
-    // Derived properties
-    computedFftSize: number;
-
-    // Streaming properties
-    maxDuration: number = 3600; // Keep last 1 hour by default
-
     constructor(config: SpectrogramConfig) {
         this.config = config;
-        this.computedFftSize = config.fftSize ?? this.currNextPowerOfTwo(config.windowSize);
     }
 
     setData(data: SpectrogramData | TimestampedData) {
@@ -63,17 +60,7 @@ export class SpectrogramModel {
     }
 
     updateConfig(newConfig: Partial<SpectrogramConfig>) {
-        const merged = { ...this.config, ...newConfig };
-
-        this.config = merged;
-        if (newConfig.windowSize || newConfig.fftSize) {
-            this.computedFftSize =
-                this.config.fftSize || this.currNextPowerOfTwo(this.config.windowSize);
-        }
-    }
-
-    private currNextPowerOfTwo(n: number): number {
-        return Math.pow(2, Math.ceil(Math.log2(n)));
+        this.config = { ...this.config, ...newConfig };
     }
 
     getDuration(): number {
