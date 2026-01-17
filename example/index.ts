@@ -23,7 +23,7 @@ const spectrogram = new Spectrogram({
     maxDb: spectrogramMaxDB,
     fftExecutor
 });
-spectrogram.setColormap('jet'); // see src/ColorMap.ts for available colormaps
+spectrogram.setColormap('jet'); // see src/render/ColorMap.ts for available colormaps
 
 const main = async () => {
     const root = document.getElementById('root') as HTMLDivElement;

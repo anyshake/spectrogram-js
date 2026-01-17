@@ -1,0 +1,23 @@
+# ---------- build / demo ----------
+dist-example/
+example/
+
+# ---------- source ----------
+src/
+
+# ---------- assets ----------
+images/
+
+# ---------- tooling / config ----------
+.github/
+eslint.config.js
+vite.config.ts
+tsconfig.json
+
+# ---------- dependencies ----------
+node_modules/
+package-lock.json
+
+# ---------- misc ----------
+*.log
+.DS_Store
