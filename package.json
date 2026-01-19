@@ -2,9 +2,16 @@
   "name": "spectrogram-js",
   "version": "1.0.0",
   "description": "🎶 A simple and intuitive TypeScript library for generating spectrogram waterfall plots.",
-  "main": "dist/index.cjs.js",
-  "module": "dist/index.esm.js",
+  "main": "dist/spectrogram-js.cjs.js",
+  "module": "dist/spectrogram-js.es.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/spectrogram-js.es.js",
+      "require": "./dist/spectrogram-js.cjs.js"
+    }
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/anyshake/spectrogram-js"
