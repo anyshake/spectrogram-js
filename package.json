@@ -1,6 +1,6 @@
 {
   "name": "spectrogram-js",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "🎶 A simple and intuitive TypeScript library for generating spectrogram waterfall plots.",
   "main": "dist/spectrogram-js.cjs.js",
   "module": "dist/spectrogram-js.es.js",
