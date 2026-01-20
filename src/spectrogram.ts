@@ -4,6 +4,7 @@ import {
     SpectrogramModel,
     TimestampedData
 } from './core/SpectrogramModel';
+import { NotoSansMonoRegular } from './fonts';
 import { CanvasRenderer, RenderOptions } from './render/CanvasRenderer';
 import { ColorMapName } from './render/ColorMap';
 
@@ -17,6 +18,12 @@ export class Spectrogram {
     constructor(config: SpectrogramConfig) {
         this.model = new SpectrogramModel(config);
         this.renderer = new CanvasRenderer(this.model);
+    }
+
+    async init() {
+        const font = new FontFace('AxisFont', `url(data:font/woff2;base64,${NotoSansMonoRegular})`);
+        await font.load();
+        (document.fonts as unknown as { add: (font: FontFace) => void }).add(font);
     }
 
     setData(data: SpectrogramData | TimestampedData) {

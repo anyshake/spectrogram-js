@@ -21,7 +21,7 @@ export class AxisRenderer {
         // Style settings
         ctx.strokeStyle = '#464646';
         ctx.fillStyle = '#252525';
-        ctx.font = '11px monospace';
+        ctx.font = '11px AxisFont';
         ctx.textBaseline = 'top';
         ctx.lineWidth = 1;
 

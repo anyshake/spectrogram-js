@@ -39,6 +39,7 @@ $ pnpm add spectrogram-js
 ```ts
 import { Spectrogram } from 'spectrogram-js';
 
+const canvas = document.querySelector('canvas')!;
 const windowSize = 768;
 
 const spectrogram = new Spectrogram({
@@ -50,14 +51,17 @@ const spectrogram = new Spectrogram({
     windowSize
 });
 
-spectrogram.setColormap('jet');
+const init = async () => {
+    spectrogram.setColormap('jet');
+    await spectrogram.init();
+};
 ```
+
+`init()` loads the necessary fonts, which is required for rendering the spectrogram.
 
 ## Rendering
 
 ```ts
-const canvas = document.querySelector('canvas')!;
-
 spectrogram.render({
     canvas,
     width: 768,
@@ -85,7 +89,7 @@ spectrogram.setData([
     [1765945224244, 27639],
     [1765945224248, 57144],
     [1765945224252, 29916],
-    [1765945224256, 66871],
+    [1765945224256, 66871]
     // ...
 ]);
 ```

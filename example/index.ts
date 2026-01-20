@@ -71,6 +71,7 @@ const main = async () => {
         requestAnimationFrame(draw);
     };
 
+    await spectrogram.init();
     draw();
 
     const ring = new RingBuffer<[number, number]>(spectrogramDuration * sampleRate);
