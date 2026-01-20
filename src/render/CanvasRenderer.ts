@@ -54,46 +54,47 @@ export class CanvasRenderer {
         this.processor.dispose();
     }
 
-    setupHiDPICanvas(canvas: HTMLCanvasElement, cssWidth: number, cssHeight: number) {
+    private setupHiDPICanvas(canvas: HTMLCanvasElement, cssWidth: number, cssHeight: number) {
         const dpr = window.devicePixelRatio || 1;
 
         canvas.style.width = `${cssWidth}px`;
         canvas.style.height = `${cssHeight}px`;
 
-        canvas.width = Math.round(cssWidth * dpr);
-        canvas.height = Math.round(cssHeight * dpr);
+        const pixelWidth = Math.round(cssWidth * dpr);
+        const pixelHeight = Math.round(cssHeight * dpr);
+
+        if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
+            canvas.width = pixelWidth;
+            canvas.height = pixelHeight;
+        }
 
         const ctx = canvas.getContext('2d', { alpha: true })!;
         ctx.resetTransform();
         ctx.scale(dpr, dpr);
         ctx.imageSmoothingEnabled = false;
 
+        // Offscreen canvas
         if (!this.offscreenCanvas) {
             this.offscreenCanvas = document.createElement('canvas');
         }
-        this.offscreenCanvas.width = canvas.width;
-        this.offscreenCanvas.height = canvas.height;
-        this.offscreenCtx = this.offscreenCanvas.getContext('2d', { alpha: true })!;
-        this.offscreenCtx.resetTransform();
-        this.offscreenCtx.scale(dpr, dpr);
-        this.offscreenCtx.imageSmoothingEnabled = false;
+        if (
+            this.offscreenCanvas.width !== pixelWidth ||
+            this.offscreenCanvas.height !== pixelHeight
+        ) {
+            this.offscreenCanvas.width = pixelWidth;
+            this.offscreenCanvas.height = pixelHeight;
+            this.offscreenCtx = this.offscreenCanvas.getContext('2d', { alpha: true })!;
+            this.offscreenCtx.resetTransform();
+            this.offscreenCtx.scale(dpr, dpr);
+            this.offscreenCtx.imageSmoothingEnabled = false;
+            this.offscreenCtx.clearRect(0, 0, cssWidth, cssHeight);
+        }
 
         return ctx;
     }
 
     private calibrateCanvas(canvas: HTMLCanvasElement, cssW: number, cssH: number) {
-        const dpr = window.devicePixelRatio || 1;
-
-        if (this.ctx && this.lastW === cssW && this.lastH === cssH && this.lastDPR === dpr) {
-            return this.ctx;
-        }
-
-        this.lastW = cssW;
-        this.lastH = cssH;
-        this.lastDPR = dpr;
-
-        this.ctx = this.setupHiDPICanvas(canvas, cssW, cssH);
-        return this.ctx;
+        return this.setupHiDPICanvas(canvas, cssW, cssH);
     }
 
     render(options: RenderOptions) {
@@ -170,31 +171,7 @@ export class CanvasRenderer {
                     if (!chunk) {
                         return;
                     }
-                    if (!this.offscreenCtx) {
-                        return;
-                    }
-
                     chunk.image = bmp;
-
-                    this.offscreenCtx.save();
-                    this.offscreenCtx.beginPath();
-                    this.offscreenCtx.rect(plotX, plotY, plotW, plotH);
-                    this.offscreenCtx.clip();
-
-                    this.drawChunk(
-                        this.offscreenCtx,
-                        chunk,
-                        tStart,
-                        tEnd,
-                        fMin,
-                        fMax,
-                        plotX,
-                        plotY,
-                        plotW,
-                        plotH
-                    );
-
-                    this.offscreenCtx.restore();
                 });
 
                 chunk = newChunk;
