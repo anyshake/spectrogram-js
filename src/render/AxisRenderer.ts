@@ -168,9 +168,10 @@ export class AxisRenderer {
 
         // Axis Title
         ctx.save();
-        ctx.translate(10, plotH / 2.8);
+        ctx.translate(10, plotY + plotH / 2);
         ctx.rotate(-Math.PI / 2);
-        ctx.textAlign = 'right';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
         ctx.fillText('Frequency (Hz)', 0, 0);
 
         ctx.restore();
