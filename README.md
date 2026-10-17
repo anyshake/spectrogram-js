@@ -73,6 +73,44 @@ spectrogram.render({
 
 Call `render()` in a loop (`requestAnimationFrame`) for real-time updates.
 
+## Appearance
+
+You can customize appearance and visibility by setting `xAxis` and `yAxis` independently in `render()`:
+
+```ts
+spectrogram.render({
+    canvas,
+    width: 768,
+    height: 256,
+    timeRange: [0, 120],
+    freqRange: [0, 25],
+    xAxis: {
+        visible: true,
+        color: '#2563eb',
+        lineWidth: 2,
+        labelStyle: {
+            color: '#1d4ed8',
+            fontSize: 14,
+            fontWeight: 600,
+            fontFamily: 'Arial, sans-serif'
+        }
+    },
+    yAxis: {
+        visible: false，
+    }
+});
+```
+
+All axis settings are optional. Defaults preserve the original appearance: visible axes,
+`#464646` lines at 1 px, and `#252525` labels using normal-weight 11 px `AxisFont`.
+`labelStyle` applies to tick labels and the frequency axis title. Sizes use CSS pixels;
+`fontWeight` accepts a number or a CSS weight such as `'normal'` or `'bold'`.
+Custom fonts must be available in the browser before rendering.
+
+Setting `visible: false` hides that axis together with its ticks, labels, and title.
+Margins adjust to label sizes and axis visibility. Omitted options use defaults on each
+`render()` call. See `example/index.ts` for interactive controls for both axes.
+
 ## Feeding Data
 
 Input data format:

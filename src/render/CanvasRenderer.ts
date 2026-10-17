@@ -1,6 +1,6 @@
 import { ChunkProcessor, DataChunk } from '../core/DataChunk';
 import { SpectrogramModel } from '../core/SpectrogramModel';
-import { AxisRenderer } from './AxisRenderer';
+import { AxisOptions, AxisRenderer } from './AxisRenderer';
 import { ColorMap, ColorMapName } from './ColorMap';
 
 export interface RenderOptions {
@@ -9,6 +9,8 @@ export interface RenderOptions {
     height: number;
     timeRange: [number, number]; // [startTime, endTime]
     freqRange: [number, number]; // [minFreq, maxFreq]
+    xAxis?: AxisOptions;
+    yAxis?: AxisOptions;
 }
 
 export class CanvasRenderer {
@@ -98,7 +100,7 @@ export class CanvasRenderer {
     }
 
     render(options: RenderOptions) {
-        const { canvas, timeRange, freqRange } = options;
+        const { canvas, timeRange, freqRange, xAxis, yAxis } = options;
         const ctx = this.calibrateCanvas(canvas, options.width, options.height);
         if (!ctx || !this.offscreenCtx || !this.offscreenCanvas) {
             return;
@@ -110,19 +112,22 @@ export class CanvasRenderer {
         const [tStart, tEnd] = timeRange;
         const [fMin, fMax] = freqRange;
 
-        const MARGIN_LEFT = 50;
-        const MARGIN_BOTTOM = 30;
-        const MARGIN_TOP = 12;
-        const MARGIN_RIGHT = 32;
+        const margins = this.axisRenderer.getMargins(
+            ctx,
+            height,
+            timeRange,
+            freqRange,
+            xAxis,
+            yAxis
+        );
 
-        const plotX = MARGIN_LEFT;
-        const plotY = MARGIN_TOP;
-        const plotW = width - MARGIN_LEFT - MARGIN_RIGHT;
-        const plotH = height - MARGIN_BOTTOM - MARGIN_TOP;
+        const plotX = margins.left;
+        const plotY = margins.top;
+        const plotW = width - margins.left - margins.right;
+        const plotH = height - margins.bottom - margins.top;
 
-        ctx.clearRect(0, 0, width, height);
-
-        if (!this.model.data) {
+        if (!this.model.data || plotW <= 0 || plotH <= 0) {
+            ctx.clearRect(0, 0, width, height);
             return;
         }
 
@@ -139,11 +144,13 @@ export class CanvasRenderer {
         const viewStartIdx = Math.floor(Math.max(0, tStart * sampleRate));
         const viewEndIdx = Math.floor(Math.min(this.model.data.length, tEnd * sampleRate));
         if (viewEndIdx <= viewStartIdx) {
+            ctx.clearRect(0, 0, width, height);
             return;
         }
 
         const startChunkId = Math.floor(viewStartIdx / chunkSamples);
         const endChunkId = Math.floor(viewEndIdx / chunkSamples);
+        const visibleChunks: DataChunk[] = [];
 
         for (let i = startChunkId; i <= endChunkId; i++) {
             const chunkStart = i * chunkSamples;
@@ -164,50 +171,54 @@ export class CanvasRenderer {
                     (val) => this.colormap.getRGB(val)
                 );
 
-                const chunkIdLocal = chunkId;
-
                 createImageBitmap(imgData).then((bmp) => {
-                    const chunk = this.chunks.get(chunkIdLocal);
-                    if (!chunk) {
+                    // A newer setData() call may have replaced this chunk while processing.
+                    if (this.chunks.get(chunkId) !== newChunk) {
+                        bmp.close();
                         return;
                     }
-                    chunk.image = bmp;
+                    newChunk.image = bmp;
                 });
 
                 chunk = newChunk;
             }
 
-            if (chunk.image && this.offscreenCtx) {
-                this.offscreenCtx.save();
-                this.offscreenCtx.beginPath();
-                this.offscreenCtx.rect(plotX, plotY, plotW, plotH);
-                this.offscreenCtx.clip();
-
-                this.drawChunk(
-                    this.offscreenCtx,
-                    chunk,
-                    tStart,
-                    tEnd,
-                    fMin,
-                    fMax,
-                    plotX,
-                    plotY,
-                    plotW,
-                    plotH
-                );
-
-                this.offscreenCtx.restore();
-            }
+            visibleChunks.push(chunk);
         }
 
+        // Keep the last complete frame until every visible bitmap is ready.
+        if (visibleChunks.some((chunk) => !chunk.image)) {
+            return;
+        }
+
+        // Rebuild with the current plot bounds, including any axis style changes.
+        this.offscreenCtx.clearRect(0, 0, width, height);
+        this.offscreenCtx.save();
+        this.offscreenCtx.beginPath();
+        this.offscreenCtx.rect(plotX, plotY, plotW, plotH);
+        this.offscreenCtx.clip();
+
+        for (const chunk of visibleChunks) {
+            this.drawChunk(
+                this.offscreenCtx,
+                chunk,
+                tStart,
+                tEnd,
+                fMin,
+                fMax,
+                plotX,
+                plotY,
+                plotW,
+                plotH
+            );
+        }
+
+        this.offscreenCtx.restore();
+
+        ctx.clearRect(0, 0, width, height);
         ctx.drawImage(this.offscreenCanvas, 0, 0, width, height);
 
-        this.axisRenderer.draw(ctx, width, height, timeRange, freqRange, {
-            left: MARGIN_LEFT,
-            bottom: MARGIN_BOTTOM,
-            top: MARGIN_TOP,
-            right: MARGIN_RIGHT
-        });
+        this.axisRenderer.draw(ctx, width, height, timeRange, freqRange, margins, xAxis, yAxis);
     }
 
     private drawChunk(
