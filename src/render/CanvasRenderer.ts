@@ -251,12 +251,23 @@ export class CanvasRenderer {
             return;
         }
 
-        const dx = Math.max(plotX, x1);
-        const dw = Math.min(plotX + plotW, x2) - dx;
+        const sourceX = Math.max(plotX, x1);
+        const sourceEndX = Math.min(plotX + plotW, x2);
+        const dpr = window.devicePixelRatio || 1;
+
+        // Align shared chunk edges to device pixels to avoid transparent seams.
+        const dx = sourceX === plotX ? sourceX : Math.round(sourceX * dpr) / dpr;
+        const endX =
+            sourceEndX === plotX + plotW ? sourceEndX : Math.round(sourceEndX * dpr) / dpr;
+        const dw = endX - dx;
+        if (dw <= 0) {
+            return;
+        }
 
         const texW = chunk.image.width;
-        const sx = ((dx - x1) / (x2 - x1)) * texW;
-        const sw = (dw / (x2 - x1)) * texW;
+        // Crop in the original time coordinates, independently of pixel snapping.
+        const sx = ((sourceX - x1) / (x2 - x1)) * texW;
+        const sw = ((sourceEndX - sourceX) / (x2 - x1)) * texW;
 
         const safeFMax = Math.min(fMax, nyquist);
         const safeFMin = Math.max(fMin, 0);
