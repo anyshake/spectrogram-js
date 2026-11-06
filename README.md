@@ -111,6 +111,31 @@ Setting `visible: false` hides that axis together with its ticks, labels, and ti
 Margins adjust to label sizes and axis visibility. Omitted options use defaults on each
 `render()` call. See `example/index.ts` for interactive controls for both axes.
 
+### Time Labels
+
+Set `xAxis.labelFormatter` to control how time ticks are displayed:
+
+```ts
+spectrogram.render({
+    canvas,
+    width: 768,
+    height: 256,
+    timeRange: [0, 120],
+    xAxis: {
+        labelFormatter: (time, { offset, end, timestamped }) =>
+            timestamped
+                ? new Date(time).toISOString().slice(11, 19)
+                : `${(end - offset).toFixed(0)}s`
+    }
+});
+```
+
+`time` is the tick timestamp in milliseconds for timestamped data, otherwise milliseconds
+from the first sample. `offset` and `end` are seconds from the first sample to the tick and
+to the end of the visible range. Margins and tick spacing follow the formatted label width.
+Without a formatter, timestamped data shows local `HH:mm:ss` and other data shows seconds
+before the end of the range.
+
 ## Feeding Data
 
 Input data format:
@@ -133,6 +158,30 @@ spectrogram.setData([
 ```
 
 You’re expected to manage buffering yourself (e.g. ring buffer).
+
+### Gaps
+
+By default, timestamped samples are placed back to back at `sampleRate` and only the first
+timestamp is used. Set `gapThreshold` (milliseconds) to keep missing data visible:
+
+```ts
+const spectrogram = new Spectrogram({
+    windowType: 'hann',
+    overlap: Math.floor(windowSize * 0.86),
+    sampleRate: 250,
+    minDb: 110,
+    maxDb: 160,
+    windowSize,
+    gapThreshold: 500
+});
+```
+
+When two consecutive timestamps are further apart than `gapThreshold`, the missing time is
+inserted and rendered blank (transparent), so the time axis stays aligned with the data.
+Raw `Float32Array` / `Float64Array` data can mark gaps with `NaN` samples. A column is left
+blank when more than half of the samples in its hop are missing; elsewhere missing samples
+are treated as zero, like the zero padding at the end of the data. `gapThreshold` applies to
+the next `setData()` call.
 
 ## Colormaps
 

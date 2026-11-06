@@ -1,6 +1,6 @@
 import { ChunkProcessor, DataChunk } from '../core/DataChunk';
 import { SpectrogramModel } from '../core/SpectrogramModel';
-import { AxisOptions, AxisRenderer } from './AxisRenderer';
+import { AxisOptions, AxisRenderer, TimeAxisOptions } from './AxisRenderer';
 import { ColorMap, ColorMapName } from './ColorMap';
 
 export interface RenderOptions {
@@ -9,7 +9,7 @@ export interface RenderOptions {
     height: number;
     timeRange: [number, number]; // [startTime, endTime]
     freqRange: [number, number]; // [minFreq, maxFreq]
-    xAxis?: AxisOptions;
+    xAxis?: TimeAxisOptions;
     yAxis?: AxisOptions;
 }
 

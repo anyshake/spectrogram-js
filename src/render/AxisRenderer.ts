@@ -18,6 +18,21 @@ export interface AxisOptions {
     labelStyle?: AxisLabelStyle;
 }
 
+export interface TimeLabelContext {
+    // Seconds from the first sample to the tick.
+    offset: number;
+    // Seconds from the first sample to the end of the visible range.
+    end: number;
+    // True when the data was set with timestamps.
+    timestamped: boolean;
+}
+
+export interface TimeAxisOptions extends AxisOptions {
+    // Formats time tick labels. `time` is the tick timestamp in milliseconds for
+    // timestamped data, otherwise milliseconds from the first sample.
+    labelFormatter?: (time: number, context: TimeLabelContext) => string;
+}
+
 export class AxisRenderer {
     private model: SpectrogramModel;
 
@@ -38,8 +53,15 @@ export class AxisRenderer {
         return fontSize;
     }
 
-    private formatTime(timeRel: number, tEnd: number) {
+    private formatTime(timeRel: number, tEnd: number, xAxis: TimeAxisOptions) {
         const totalSeconds = this.model.startTime + timeRel * 1000;
+        if (xAxis.labelFormatter) {
+            return xAxis.labelFormatter(totalSeconds, {
+                offset: timeRel,
+                end: tEnd,
+                timestamped: this.model.showRealTimeScale
+            });
+        }
         if (this.model.showRealTimeScale) {
             const date = new Date(totalSeconds);
             const hh = date.getHours().toString().padStart(2, '0');
@@ -95,7 +117,7 @@ export class AxisRenderer {
         height: number,
         timeRange: [number, number],
         freqRange: [number, number],
-        xAxis: AxisOptions = {},
+        xAxis: TimeAxisOptions = {},
         yAxis: AxisOptions = {}
     ) {
         ctx.save();
@@ -109,11 +131,13 @@ export class AxisRenderer {
             const [tStart, tEnd] = timeRange;
             const linePadding = ctx.lineWidth / 2;
             left = Math.ceil(
-                ctx.measureText(this.formatTime(tStart, tEnd)).width / 2 + linePadding
+                ctx.measureText(this.formatTime(tStart, tEnd, xAxis)).width / 2 + linePadding
             );
             right = Math.max(
                 32,
-                Math.ceil(ctx.measureText(this.formatTime(tEnd, tEnd)).width / 2 + linePadding)
+                Math.ceil(
+                    ctx.measureText(this.formatTime(tEnd, tEnd, xAxis)).width / 2 + linePadding
+                )
             );
             bottom = Math.max(30, Math.ceil(8 + linePadding + fontSize * 1.2));
         }
@@ -152,7 +176,7 @@ export class AxisRenderer {
         timeRange: [number, number],
         freqRange: [number, number],
         margins: { left: number; bottom: number; top: number; right: number },
-        xAxis: AxisOptions = {},
+        xAxis: TimeAxisOptions = {},
         yAxis: AxisOptions = {}
     ) {
         // Save context state
@@ -186,8 +210,8 @@ export class AxisRenderer {
             ctx.stroke();
 
             const labelWidth = Math.max(
-                ctx.measureText(this.formatTime(tStart, tEnd)).width,
-                ctx.measureText(this.formatTime(tEnd, tEnd)).width
+                ctx.measureText(this.formatTime(tStart, tEnd, xAxis)).width,
+                ctx.measureText(this.formatTime(tEnd, tEnd, xAxis)).width
             );
             const numTicksX = Math.max(1, Math.floor(plotW / Math.max(100, labelWidth + 16)));
             const stepX = duration / numTicksX;
@@ -206,7 +230,7 @@ export class AxisRenderer {
                 ctx.stroke();
 
                 ctx.fillText(
-                    this.formatTime(timeRel, tEnd),
+                    this.formatTime(timeRel, tEnd, xAxis),
                     x,
                     bottomY + 8 + (ctx.lineWidth - 1) / 2
                 );

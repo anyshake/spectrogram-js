@@ -18,6 +18,10 @@ export interface SpectrogramConfig {
 
     // Optional, speccify a FFT executor instance for reuse
     fftExecutor?: FFTExecutor;
+
+    // Optional, timestamped samples further apart than this many milliseconds
+    // are drawn as a blank gap. Gaps are ignored when omitted.
+    gapThreshold?: number;
 }
 
 export type SpectrogramData = Float32Array | Float64Array;
@@ -44,15 +48,39 @@ export class SpectrogramModel {
                 return;
             }
             this.startTime = data[0][0];
-            const buffer = new Float32Array(data.length);
-            for (let i = 0; i < data.length; i++) {
-                buffer[i] = data[i][1];
-            }
-            this.data = buffer;
+            this.data = this.toBuffer(data);
         } else {
             this.data = data;
             this.startTime = 0;
         }
+    }
+
+    private getGapSize(data: TimestampedData, index: number) {
+        const { gapThreshold, sampleRate } = this.config;
+        if (gapThreshold === undefined || index === 0 || sampleRate <= 0) {
+            return 0;
+        }
+        const delta = data[index][0] - data[index - 1][0];
+        return delta > gapThreshold ? Math.max(0, Math.round((delta * sampleRate) / 1000) - 1) : 0;
+    }
+
+    private toBuffer(data: TimestampedData) {
+        let length = data.length;
+        for (let i = 1; i < data.length; i++) {
+            length += this.getGapSize(data, i);
+        }
+
+        const buffer = new Float32Array(length);
+        let offset = 0;
+        for (let i = 0; i < data.length; i++) {
+            const gap = this.getGapSize(data, i);
+            if (gap > 0) {
+                buffer.fill(NaN, offset, offset + gap);
+                offset += gap;
+            }
+            buffer[offset++] = data[i][1];
+        }
+        return buffer;
     }
 
     private isTimestamped(data: unknown): data is TimestampedData {

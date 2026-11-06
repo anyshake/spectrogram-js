@@ -67,7 +67,7 @@ export class ChunkProcessor {
         let validCount = 0;
         for (let i = 0; i < windowSize; i++) {
             const idx = startIdx + i;
-            if (idx < data.length) {
+            if (idx < data.length && !isNaN(data[idx])) {
                 dcSum += data[idx];
                 validCount++;
             }
@@ -77,32 +77,35 @@ export class ChunkProcessor {
             const signalStart = startIdx + x * hopSize;
             const mean = validCount > 0 ? dcSum / validCount : 0;
 
-            const end = Math.min(windowSize, data.length - signalStart);
-            let i = 0;
-            for (; i < end; i++) {
-                inputBuf[i] = (data[signalStart + i] - mean) * windowBuf[i];
-            }
-            for (; i < fftSize; i++) {
-                inputBuf[i] = 0;
-            }
+            if (!this.isGap(data, signalStart, hopSize)) {
+                const end = Math.min(windowSize, data.length - signalStart);
+                let i = 0;
+                for (; i < end; i++) {
+                    const value = data[signalStart + i];
+                    inputBuf[i] = isNaN(value) ? 0 : (value - mean) * windowBuf[i];
+                }
+                for (; i < fftSize; i++) {
+                    inputBuf[i] = 0;
+                }
 
-            const mags = this.fft.compute(inputBuf, minDb, maxDb);
+                const mags = this.fft.compute(inputBuf, minDb, maxDb);
 
-            for (let y = 0; y < height; y++) {
-                const val = mags[y];
-                const rgb = colormapToRgb(val);
-                const row = height - 1 - y;
-                const idx = (row * width + x) * 4;
-                pixels[idx] = rgb[0];
-                pixels[idx + 1] = rgb[1];
-                pixels[idx + 2] = rgb[2];
-                pixels[idx + 3] = 255;
+                for (let y = 0; y < height; y++) {
+                    const val = mags[y];
+                    const rgb = colormapToRgb(val);
+                    const row = height - 1 - y;
+                    const idx = (row * width + x) * 4;
+                    pixels[idx] = rgb[0];
+                    pixels[idx + 1] = rgb[1];
+                    pixels[idx + 2] = rgb[2];
+                    pixels[idx + 3] = 255;
+                }
             }
 
             if (x + 1 < width) {
                 for (let k = 0; k < hopSize; k++) {
                     const outIdx = signalStart + k;
-                    if (outIdx < data.length) {
+                    if (outIdx < data.length && !isNaN(data[outIdx])) {
                         dcSum -= data[outIdx];
                         validCount--;
                     }
@@ -111,7 +114,7 @@ export class ChunkProcessor {
                 const nextStart = signalStart + windowSize;
                 for (let k = 0; k < hopSize; k++) {
                     const inIdx = nextStart + k;
-                    if (inIdx < data.length) {
+                    if (inIdx < data.length && !isNaN(data[inIdx])) {
                         dcSum += data[inIdx];
                         validCount++;
                     }
@@ -120,6 +123,17 @@ export class ChunkProcessor {
         }
 
         return imgData;
+    }
+
+    private isGap(data: SpectrogramData, start: number, length: number) {
+        const end = Math.min(start + length, data.length);
+        let missing = 0;
+        for (let i = start; i < end; i++) {
+            if (isNaN(data[i])) {
+                missing++;
+            }
+        }
+        return missing * 2 > end - start;
     }
 
     dispose() {

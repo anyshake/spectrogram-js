@@ -1,4 +1,4 @@
-import { type AxisOptions, FFTExecutor, Spectrogram } from '../src/index';
+import { type AxisOptions, FFTExecutor, Spectrogram, type TimeAxisOptions } from '../src/index';
 import RingBuffer from './RingBuffer';
 
 const spectrogramDuration = 120; // seconds
@@ -26,7 +26,7 @@ const spectrogram = new Spectrogram({
 spectrogram.setColormap('jet'); // see src/render/ColorMap.ts for available colormaps
 
 // Axis options are passed to render(), so changes take effect on the next frame.
-const xAxis: AxisOptions = {
+const xAxis: TimeAxisOptions = {
     visible: true,
     color: '#2563eb',
     lineWidth: 2,
@@ -145,6 +145,30 @@ const createAxisControls = (name: string, options: AxisOptions) => {
     return fieldset;
 };
 
+const timeLabelFormatters: Record<string, TimeAxisOptions['labelFormatter']> = {
+    'Local time (default)': undefined,
+    'UTC time': (time, { timestamped }) =>
+        timestamped ? new Date(time).toISOString().slice(11, 19) : `${(time / 1000).toFixed(0)}s`,
+    'Seconds from start': (_, { offset }) => `+${offset.toFixed(0)}s`
+};
+
+const createTimeLabelControl = (options: TimeAxisOptions) => {
+    const label = document.createElement('label');
+    label.textContent = 'Time labels ';
+    const select = document.createElement('select');
+    Object.keys(timeLabelFormatters).forEach((name) => {
+        const option = document.createElement('option');
+        option.value = name;
+        option.textContent = name;
+        select.appendChild(option);
+    });
+    select.onchange = () => {
+        options.labelFormatter = timeLabelFormatters[select.value];
+    };
+    label.appendChild(select);
+    return label;
+};
+
 const main = async () => {
     const root = document.getElementById('root') as HTMLDivElement;
 
@@ -178,6 +202,7 @@ const main = async () => {
     controls.style.marginBottom = '12px';
     controls.appendChild(createAxisControls('X axis (time)', xAxis));
     controls.appendChild(createAxisControls('Y axis (frequency)', yAxis));
+    controls.appendChild(createTimeLabelControl(xAxis));
     root.appendChild(controls);
 
     const canvas = document.createElement('canvas');
