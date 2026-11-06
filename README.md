@@ -178,10 +178,10 @@ const spectrogram = new Spectrogram({
 
 When two consecutive timestamps are further apart than `gapThreshold`, the missing time is
 inserted and rendered blank (transparent), so the time axis stays aligned with the data.
-Raw `Float32Array` / `Float64Array` data can mark gaps with `NaN` samples. A column is left
-blank when more than half of the samples in its hop are missing; elsewhere missing samples
-are treated as zero, like the zero padding at the end of the data. `gapThreshold` applies to
-the next `setData()` call.
+Raw `Float32Array` / `Float64Array` data can mark gaps with `NaN` samples. Analysis windows
+must contain `windowSize` valid samples; a column is left blank when its window contains a
+missing sample or runs past the end of the data. `gapThreshold` applies to the next
+`setData()` call.
 
 ## Colormaps
 

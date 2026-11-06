@@ -75,14 +75,14 @@ export class ChunkProcessor {
 
         for (let x = 0; x < width; x++) {
             const signalStart = startIdx + x * hopSize;
-            const mean = validCount > 0 ? dcSum / validCount : 0;
+            const hasCompleteWindow =
+                signalStart + windowSize <= data.length && validCount === windowSize;
 
-            if (!this.isGap(data, signalStart, hopSize)) {
-                const end = Math.min(windowSize, data.length - signalStart);
+            if (hasCompleteWindow) {
+                const mean = dcSum / windowSize;
                 let i = 0;
-                for (; i < end; i++) {
-                    const value = data[signalStart + i];
-                    inputBuf[i] = isNaN(value) ? 0 : (value - mean) * windowBuf[i];
+                for (; i < windowSize; i++) {
+                    inputBuf[i] = (data[signalStart + i] - mean) * windowBuf[i];
                 }
                 for (; i < fftSize; i++) {
                     inputBuf[i] = 0;
@@ -123,17 +123,6 @@ export class ChunkProcessor {
         }
 
         return imgData;
-    }
-
-    private isGap(data: SpectrogramData, start: number, length: number) {
-        const end = Math.min(start + length, data.length);
-        let missing = 0;
-        for (let i = start; i < end; i++) {
-            if (isNaN(data[i])) {
-                missing++;
-            }
-        }
-        return missing * 2 > end - start;
     }
 
     dispose() {
